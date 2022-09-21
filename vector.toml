@@ -1,0 +1,18 @@
+[sources.stdin]
+type = "stdin"
+
+[transforms.log_json]
+  type = "remap"
+  inputs = ["stdin"]
+  source = '''
+  kept = if .host == null {{}} else {{"host": .host}}
+  # if message is valid json and also an object, merge with that, otherwise keep message
+  . = merge(kept, object(parse_json(.message) ?? null) ?? {"message": .message})
+  '''
+
+[sinks.honeycomb]
+  type = "honeycomb"
+  inputs = ["log_json"]
+  api_key = "${HONEYCOMB_API_KEY}"
+  # default to sparkl if not set
+  dataset = "${HONEYCOMB_DATASET:-sparkl}"
